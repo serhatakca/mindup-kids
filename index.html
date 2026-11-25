@@ -2422,6 +2422,15 @@ function renderDataSummary() {
 // ═══ CLOUD SYNC (Firebase Firestore) ═══
 const FB_CFG_KEY = 'mindup_fb_config';
 const FB_AUTH_KEY = 'mindup_fb_auth';
+const DEFAULT_FB_CFG = {
+  apiKey: "AIzaSyDY6MA5HV3G-5-04Cch_YnfhoJlXPW0Dhs",
+  authDomain: "mindup-30f60.firebaseapp.com",
+  projectId: "mindup-30f60",
+  storageBucket: "mindup-30f60.firebasestorage.app",
+  messagingSenderId: "311043668225",
+  appId: "1:311043668225:web:1efefa4454e7eab7a98300",
+  measurementId: "G-NJZ61NVPEJ"
+};
 let currentProfileId = null, fbDb = null, syncActive = false;
 const firstSnap = {students:false, sessions:false};
 let unsubs = [];
@@ -2573,11 +2582,11 @@ function openSyncModal() {
   const raw = localStorage.getItem(FB_CFG_KEY);
   const cfg = raw ? JSON.parse(raw) : null;
   const auth = JSON.parse(localStorage.getItem(FB_AUTH_KEY) || '{}');
-  document.getElementById('fb-config').value = cfg ? JSON.stringify(cfg, null, 2) : '';
+  document.getElementById('fb-config').value = JSON.stringify(cfg || DEFAULT_FB_CFG, null, 2);
   document.getElementById('fb-email').value = auth.email || '';
   document.getElementById('fb-pass').value = auth.pass || '';
   document.getElementById('fb-disconnect').style.display = cfg ? 'inline-flex' : 'none';
-  document.getElementById('sync-guide').open = !cfg;
+  document.getElementById('sync-guide').open = false;
   document.getElementById('sync-status-box').innerHTML = cfg
     ? `<div class="alert-box success">${syncActive ? '🟢' : '🟡'} Bulut bağlantısı ayarlı: <b>${cfg.projectId}</b>. Bu config'i ve ortak e-posta/şifreyi ikinci bilgisayarda da girin.</div>`
     : `<div class="alert-box warning">💾 Şu an <b>yerel mod</b>: veriler yalnızca bu bilgisayarda. İki bilgisayarı eşitlemek için aşağıdaki kurulumu yapın.</div>`;
