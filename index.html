@@ -2979,6 +2979,7 @@ async function gcalDeleteSession(s) {
 async function gcalPullSync(silent = true) {
   const cfg = getGcalCfg();
   if (!cfg || !cfg.url || gcalSyncing) return;
+  if (localStorage.getItem(FB_CFG_KEY) && !syncActive) return;
   gcalSyncing = true;
   if (!silent) setGcalPill('connecting', '🟡 Eşitleniyor…');
   try {
@@ -3088,8 +3089,9 @@ async function gcalPullSync(silent = true) {
       }
     }
 
-    // MindUp'ta olup henüz Google Takvime gitmemiş seansları gönder
-    const unpushed = DB.sessions.filter(s => !s.gcalId && s.tarih >= minDate && s.tarih <= maxDate);
+    // MindUp'ta olup henüz Google Takvime gitmemiş seansları gönder (diğer PC ile çakışmaması için >20sn bekle)
+    const nowMs = Date.now();
+    const unpushed = DB.sessions.filter(s => !s.gcalId && s.tarih >= minDate && s.tarih <= maxDate && (!s.olusturma || (nowMs - new Date(s.olusturma).getTime()) > 20000));
     for (const s of unpushed) {
       await gcalPushSession(s);
     }
@@ -3197,15 +3199,13 @@ window.addEventListener('resize', fitScale);
 fitScale();
 
 // ═══ INIT ═══
-function init() {
+async function init() {
   loadDB();
   const today=new Date();
   document.getElementById('today-date').textContent=today.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
   updateBadges();
   refreshDashboard();
   applyLogo();
-  initSync();
-  initGcalSync();
 
   // Close modals on overlay click
   document.querySelectorAll('.modal-overlay').forEach(o=>{
@@ -3222,6 +3222,15 @@ function init() {
       setTimeout(()=>toast('⚠️ Son yedekten '+diff+' gün geçti. Lütfen veri yedekleyin!','warning'), 2000);
     }
   }
+
+  await initSync();
+  if (syncActive) {
+    const waitEnd = Date.now() + 3500;
+    while (!(firstSnap.students && firstSnap.sessions) && Date.now() < waitEnd) {
+      await new Promise(r => setTimeout(r, 150));
+    }
+  }
+  initGcalSync();
 }
 
 function checkDateRollover() {
