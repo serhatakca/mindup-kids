@@ -3,6 +3,24 @@ setlocal
 set "APP_DIR=%~dp0"
 if "%APP_DIR:~-1%"=="\" set "APP_DIR=%APP_DIR:~0,-1%"
 set "APP_URL=https://serhatakca.github.io/mindup-kids/"
+set "ICO_URL=https://serhatakca.github.io/mindup-kids/mindup.ico"
+set "APP_ROOT=%LocalAppData%\MindUpKids"
+set "ICO_TARGET=%APP_ROOT%\mindup.ico"
+if not exist "%APP_ROOT%" mkdir "%APP_ROOT%" >nul 2>&1
+
+set "USE_LOCAL_ICO=0"
+if exist "%APP_DIR%\mindup.ico" (
+  for %%F in ("%APP_DIR%\mindup.ico") do (
+    if %%~zF GTR 50000 set "USE_LOCAL_ICO=1"
+  )
+)
+
+if "%USE_LOCAL_ICO%"=="1" (
+  copy /y "%APP_DIR%\mindup.ico" "%ICO_TARGET%" >nul
+) else (
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('%ICO_URL%', '%ICO_TARGET%') } catch {}" >nul 2>&1
+)
+
 set "VBS=%TEMP%\mindup_shortcut_setup.vbs"
 
 > "%VBS%" (
@@ -10,7 +28,6 @@ set "VBS=%TEMP%\mindup_shortcut_setup.vbs"
   echo Set sh  = CreateObject("WScript.Shell"^)
   echo dir = WScript.Arguments(0^)
   echo uri = WScript.Arguments(1^)
-  echo icoSrc = dir ^& "\mindup.ico"
   echo pf  = sh.ExpandEnvironmentStrings("%ProgramFiles%"^)
   echo pf8 = sh.ExpandEnvironmentStrings("%ProgramFiles(x86)%"^)
   echo la  = sh.ExpandEnvironmentStrings("%LocalAppData%"^)
@@ -31,7 +48,6 @@ set "VBS=%TEMP%\mindup_shortcut_setup.vbs"
   echo If Not fso.FolderExists(appRoot^) Then fso.CreateFolder appRoot
   echo If Not fso.FolderExists(appProf^) Then fso.CreateFolder appProf
   echo icoTarget = appRoot ^& "\mindup.ico"
-  echo If fso.FileExists(icoSrc^) Then fso.CopyFile icoSrc, icoTarget, True
   echo desk = sh.SpecialFolders("Desktop"^)
   echo lnkPath = desk ^& "\MindUp Kids.lnk"
   echo Set sc = sh.CreateShortcut(lnkPath^)
